@@ -8,7 +8,6 @@ import json
 from b2sdk.v2 import InMemoryAccountInfo
 from b2sdk.v2 import B2Api
 
-from itertools import islice
 from dotenv import load_dotenv
 import requests
 import zipfile
@@ -115,7 +114,7 @@ def main():
 
         csv_dict_reader = csv.DictReader(file, fieldnames=trimmed_header_row)
 
-        for i, row in islice(enumerate(csv_dict_reader), 100):
+        for i, row in enumerate(csv_dict_reader):
             company = {
                 'company_number': row['CompanyNumber'],
                 'company_name': row['CompanyName'],
