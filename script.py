@@ -97,7 +97,7 @@ def main():
     local_zip = 'local/BasicCompanyDataAsOneFile-2023-11-01.zip'
     unzip_dir = 'local/'
 
-    response = requests.get(url)
+    response = requests.get(url, verify=False)
     with open(local_zip, 'wb') as file:
         file.write(response.content)
 
