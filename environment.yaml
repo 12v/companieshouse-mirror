@@ -1,9 +1,0 @@
-name: companieshouse
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - python=3.9
-  - fabric
-  - boto3
-  - python-dotenv
