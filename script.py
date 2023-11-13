@@ -94,17 +94,18 @@ def main():
             file_path = local_path
 
     url = 'https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip'
-    local_zip = 'local/BasicCompanyDataAsOneFile-2023-11-01.zip'
-    unzip_dir = 'local/'
+    local_zip = 'BasicCompanyDataAsOneFile-2023-11-01.zip'
 
     response = requests.get(url, verify=False)
     with open(local_zip, 'wb') as file:
         file.write(response.content)
 
     with zipfile.ZipFile(local_path, 'r') as zip_ref:
-        zip_ref.extractall(unzip_dir)
+        zip_ref.extractall()
+
+    print(os.listdir('.'))
     
-    file_path = 'local/BasicCompanyDataAsOneFile-2023-11-01.csv'
+    file_path = 'BasicCompanyDataAsOneFile-2023-11-01.csv'
     output_dir = './output/companies/'
     os.makedirs(output_dir, exist_ok=True)
     with open(file_path) as file:
