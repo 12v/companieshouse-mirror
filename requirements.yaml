@@ -1,0 +1,6 @@
+name: companieshouse
+dependencies:
+  - python=3.10
+  - fabric
+  - boto3
+  - python-dotenv
