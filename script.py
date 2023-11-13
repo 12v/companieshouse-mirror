@@ -101,7 +101,7 @@ def main():
     with open(local_zip, 'wb') as file:
         file.write(response.content)
 
-    with zipfile.ZipFile(file_path, 'r') as zip_ref:
+    with zipfile.ZipFile(local_zip, 'r') as zip_ref:
         zip_ref.extractall()
 
     print(os.listdir('.'))
