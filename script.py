@@ -105,11 +105,18 @@ def process_chunk(chunk, output_dir, bucket):
         with open(output_dir + row["CompanyNumber"] + ".json", "w") as f:
             json.dump(generate_json_from_csv(row), f)
 
-    # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     executor.map(upload_file, os.listdir(output_dir))
-
-    for file_name in os.listdir(output_dir):
-        upload_file(file_name)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(upload_file, file_name): file_name
+            for file_name in os.listdir(output_dir)
+        }
+        for future in concurrent.futures.as_completed(futures):
+            file_name = futures[future]
+            try:
+                future.result()
+            except Exception as exc:
+                print(f"File {file_name} generated an exception: {exc}", flush=True)
+                raise
 
     shutil.rmtree(output_dir, ignore_errors=True)
 
