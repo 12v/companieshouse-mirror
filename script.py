@@ -105,7 +105,9 @@ def process_chunk(chunk, bucket):
         futures = {
             executor.submit(upload_file, row): row["CompanyNumber"] for row in chunk
         }
+        print(f"Max number of threads: {executor._max_workers}", flush=True)
         for future in concurrent.futures.as_completed(futures):
+            print(f"Number of threads in use: {len(executor._threads)}", flush=True)
             try:
                 future.result()
             except Exception as exc:
