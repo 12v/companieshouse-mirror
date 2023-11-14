@@ -6,15 +6,13 @@ import csv
 import shutil
 import json
 from b2sdk.v2 import InMemoryAccountInfo
-from b2sdk.v2 import B2Api
+from b2sdk.v2 import B2Api, exception
 
 from dotenv import load_dotenv
 import requests
 import zipfile
 
 load_dotenv()
-
-bucket = None
 
 
 def print_contents(sftp):
@@ -97,12 +95,11 @@ def generate_json_from_csv(row):
 output_dir = "./output/companies/"
 
 
-def upload_file(file_name):
-    file_path = output_dir + file_name
-    bucket.upload_local_file(file_path, file_name)
+def process_chunk(chunk, output_dir, bucket):
+    def upload_file(file_name):
+        file_path = output_dir + file_name
+        bucket.upload_local_file(file_path, file_name)
 
-
-def process_chunk(chunk, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     for row in chunk:
         with open(output_dir + row["CompanyNumber"] + ".json", "w") as f:
@@ -126,6 +123,8 @@ def main():
 
     file_path = ""
 
+    bucket = None
+
     with Connection(
         os.getenv("CH_URL"),
         user=os.getenv("CH_USER"),
@@ -138,14 +137,12 @@ def main():
             temp_path = "temp/" + path
             local_path = "local/" + path
 
-            buckets = b2_api.list_buckets()
-
             bucket_name = convert_path_to_bucket(path, "companies")
 
             try:
                 bucket = b2_api.get_bucket_by_name(bucket_name)
                 print("Bucket exists")
-            except b2sdk.exception.NonExistentBucket:
+            except exception.NonExistentBucket:
                 print("Bucket doesn't exist, creating")
                 bucket = b2_api.create_bucket(bucket_name, "allPrivate")
                 print("Bucket created")
@@ -191,10 +188,10 @@ def main():
             chunk.append(row)
             if (i + 1) % 1000 == 0:
                 print(i, flush=True)
-                process_chunk(chunk, output_dir)
+                process_chunk(chunk, output_dir, bucket)
                 chunk = []
         if chunk:
-            process_chunk(chunk, output_dir)
+            process_chunk(chunk, output_dir, bucket)
 
     # bucket_info = bucket.bucket_info
     # bucket_info["complete"] = "true"
