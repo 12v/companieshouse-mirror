@@ -102,13 +102,15 @@ def upload_file(file_name):
     bucket.upload_local_file(file_path, file_name)
 
 
-def process_chunk(chunk, output_dir, executor):
+def process_chunk(chunk, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     for row in chunk:
         with open(output_dir + row["CompanyNumber"] + ".json", "w") as f:
             json.dump(generate_json_from_csv(row), f)
 
-    executor.map(upload_file, os.listdir(output_dir))
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.map(upload_file, os.listdir(output_dir))
+
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
@@ -208,7 +210,7 @@ def main():
         os.remove(local_zip)
 
     chunk = []
-    with open(file_path) as file, concurrent.futures.ThreadPoolExecutor() as executor:
+    with open(file_path) as file:
         csv_reader = csv.reader(file)
         header_row = next(csv_reader)
         trimmed_header_row = [x.strip() for x in header_row]
@@ -219,10 +221,10 @@ def main():
             chunk.append(row)
             if (i + 1) % 1000 == 0:
                 print(i, flush=True)
-                process_chunk(chunk, output_dir, executor)
+                process_chunk(chunk, output_dir)
                 chunk = []
         if chunk:
-            process_chunk(chunk, output_dir, executor)
+            process_chunk(chunk, output_dir)
 
     bucket_info = bucket.bucket_info
     bucket_info["complete"] = "true"
