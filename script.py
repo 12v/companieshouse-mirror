@@ -11,6 +11,7 @@ from b2sdk.v2 import B2Api, exception
 from dotenv import load_dotenv
 import requests
 import zipfile
+from itertools import islice
 
 load_dotenv()
 
@@ -92,33 +93,22 @@ def generate_json_from_csv(row):
     }
 
 
-output_dir = "./output/companies/"
-
-
-def process_chunk(chunk, output_dir, bucket):
-    def upload_file(file_name):
-        file_path = output_dir + file_name
-        bucket.upload_local_file(file_path, file_name)
-
-    os.makedirs(output_dir, exist_ok=True)
-    for row in chunk:
-        with open(output_dir + row["CompanyNumber"] + ".json", "w") as f:
-            json.dump(generate_json_from_csv(row), f)
+def process_chunk(chunk, bucket):
+    def upload_file(row):
+        body = json.dumps(generate_json_from_csv(row))
+        file_name = row["CompanyNumber"] + ".json"
+        bucket.upload_bytes(body.encode("utf-8"), file_name)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {
-            executor.submit(upload_file, file_name): file_name
-            for file_name in os.listdir(output_dir)
+            row["CompanyNumber"]: executor.submit(upload_file, row) for row in chunk
         }
-        for future in concurrent.futures.as_completed(futures):
-            file_name = futures[future]
+        for companyNumber, future in concurrent.futures.as_completed(futures):
             try:
                 future.result()
             except Exception as exc:
-                print(f"File {file_name} generated an exception: {exc}", flush=True)
+                print(f"File {companyNumber} generated an exception: {exc}", flush=True)
                 raise
-
-    shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def main():
@@ -183,7 +173,15 @@ def main():
 
         os.remove(local_zip)
 
-    chunk = []
+    chunk_size = 1000
+    total_rows = sum(1 for _ in csv.reader(open(file_path))) - 1
+
+    bucket_info = bucket.bucket_info
+    start_index = int(bucket_info.get("progress", 0))
+    processed_rows = start_index
+
+    print("Starting at row " + str(start_index) + " of " + str(total_rows), flush=True)
+
     with open(file_path) as file:
         csv_reader = csv.reader(file)
         header_row = next(csv_reader)
@@ -191,18 +189,25 @@ def main():
 
         csv_dict_reader = csv.DictReader(file, fieldnames=trimmed_header_row)
 
-        for i, row in enumerate(csv_dict_reader):
-            chunk.append(row)
-            if (i + 1) % 1000 == 0:
-                print(i, flush=True)
-                process_chunk(chunk, output_dir, bucket)
-                chunk = []
-        if chunk:
-            process_chunk(chunk, output_dir, bucket)
+        for _ in range(start_index):
+            next(csv_dict_reader, None)
 
-    # bucket_info = bucket.bucket_info
-    # bucket_info["complete"] = "true"
-    # bucket.set_info(bucket_info)
+        while True:
+            chunk = list(islice(csv_dict_reader, chunk_size))
+            if not chunk:
+                break
+
+            process_chunk(chunk, bucket)
+            processed_rows += len(chunk)
+            print(f"Processed {processed_rows} of {total_rows} rows", flush=True)
+
+            bucket_info = bucket.bucket_info
+            bucket_info["progress"] = str(processed_rows)
+            bucket.set_info(bucket_info)
+
+    bucket_info = bucket.bucket_info
+    bucket_info["complete"] = "true"
+    bucket.set_info(bucket_info)
 
 
 if __name__ == "__main__":
