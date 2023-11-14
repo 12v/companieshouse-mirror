@@ -134,8 +134,12 @@ def main():
             b2_api = initialise_b2_api()
 
             for bucket in b2_api.list_buckets():
-                if bucket.bucket_info["fileCount"] == "0":
+                try:
                     bucket.delete_bucket()
+                    print("Deleted bucket " + bucket.bucket_name, flush=True)
+                except Exception as e:
+                    print("Couldn't delete bucket " + bucket.bucket_name)
+                    print(e)
 
             temp_path = "temp/" + path
             local_path = "local/" + path
