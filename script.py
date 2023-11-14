@@ -101,9 +101,9 @@ def process_chunk(chunk, bucket):
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {
-            row["CompanyNumber"]: executor.submit(upload_file, row) for row in chunk
+            executor.submit(upload_file, row): row["CompanyNumber"] for row in chunk
         }
-        for companyNumber, future in concurrent.futures.as_completed(futures):
+        for future, companyNumber in concurrent.futures.as_completed(futures):
             try:
                 future.result()
             except Exception as exc:
