@@ -142,53 +142,20 @@ def main():
 
             bucket_name = convert_path_to_bucket(path, "companies")
 
-            existing_buckets = [
-                x
-                for x in buckets
-                if x.name.startswith(bucket_name) and not x.name.endswith("csv")
-            ]
+            try:
+                bucket = b2_api.get_bucket_by_name(bucket_name)
+                print("Bucket exists")
+            except b2sdk.exception.NonExistentBucket:
+                print("Bucket doesn't exist, creating")
+                bucket = b2_api.create_bucket(bucket_name, "allPrivate")
+                print("Bucket created")
 
-            sorted_existing_buckets = sorted(
-                existing_buckets, key=lambda x: int(x.name.split("-")[-1]), reverse=True
-            )
-
-            next_attempt_count = None
-
-            if not sorted_existing_buckets:
-                print("No buckets exist with name " + bucket_name)
-                next_attempt_count = 0
+            bucket_info = bucket.bucket_info
+            if "complete" not in bucket_info or bucket_info["complete"] != "true":
+                print("Bucket exists but is not complete, continuing")
             else:
-                latest_attempt_bucket = sorted_existing_buckets[0]
-                bucket_info = latest_attempt_bucket.bucket_info
-                if "complete" not in bucket_info or bucket_info["complete"] != "true":
-                    print(
-                        "Bucket already exists but is not complete, marking bucket for deletion"
-                    )
-                    latest_attempt_bucket.update(
-                        lifecycle_rules=[
-                            {
-                                "fileNamePrefix": "",
-                                "daysFromUploadingToHiding": 1,
-                                "daysFromHidingToDeleting": 1,
-                            }
-                        ]
-                    )
-                    print("Bucket marked for deletion")
-                    next_attempt_count = (
-                        int(latest_attempt_bucket.name.split("-")[-1]) + 1
-                    )
-                else:
-                    print("Bucket already exists and is complete")
-                    exit()
-
-            print(
-                "creating bucket "
-                + convert_path_to_bucket(path, "companies", next_attempt_count)
-            )
-            bucket = b2_api.create_bucket(
-                convert_path_to_bucket(path, "companies", next_attempt_count),
-                "allPrivate",
-            )
+                print("Bucket already exists and is complete")
+                exit()
 
             # if not os.path.isfile('local/' + path):
             #     os.makedirs(os.path.dirname(temp_path))
