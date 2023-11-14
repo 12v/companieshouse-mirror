@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 import requests
 import zipfile
 from itertools import islice
+import time
+import sys
 
 load_dotenv()
 
@@ -114,6 +116,8 @@ def process_chunk(chunk, bucket):
 
 
 def main():
+    start_time = time.time()
+
     if os.path.isdir("temp/"):
         shutil.rmtree("temp/", ignore_errors=True)
 
@@ -214,6 +218,11 @@ def main():
             bucket_info = bucket.bucket_info
             bucket_info["progress"] = str(processed_rows)
             bucket.set_info(bucket_info)
+
+            elapsed_time = time.time() - start_time
+            if elapsed_time > (6 * 60 - 10) * 60:
+                print("Stopping before timeout", flush=True)
+                sys.exit()
 
     bucket_info = bucket.bucket_info
     bucket_info["complete"] = "true"
