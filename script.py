@@ -94,6 +94,8 @@ def generate_json_from_csv(row):
         k: v for k, v in company["registered_office_address"].items() if v is not None
     }
 
+    return company
+
 
 def process_chunk(chunk, bucket):
     start_time = time.time()
@@ -102,6 +104,7 @@ def process_chunk(chunk, bucket):
         body = json.dumps(generate_json_from_csv(row))
         file_name = row["CompanyNumber"] + ".json"
         bucket.upload_bytes(body.encode("utf-8"), file_name)
+        print(body, flush=True)
 
     with concurrent.futures.ThreadPoolExecutor(12) as executor:
         futures = {
