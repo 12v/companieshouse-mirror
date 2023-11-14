@@ -103,11 +103,13 @@ def process_chunk(chunk, bucket):
         futures = {
             executor.submit(upload_file, row): row["CompanyNumber"] for row in chunk
         }
-        for future, companyNumber in concurrent.futures.as_completed(futures):
+        for future in concurrent.futures.as_completed(futures):
             try:
                 future.result()
             except Exception as exc:
-                print(f"File {companyNumber} generated an exception: {exc}", flush=True)
+                print(
+                    f"File {futures[future]} generated an exception: {exc}", flush=True
+                )
                 raise
 
 
