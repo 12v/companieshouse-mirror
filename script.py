@@ -28,6 +28,22 @@ def convert_path_to_bucket(path, prefix, suffix = None):
     name = prefix + '-' + path.replace('/', '-').replace('.', '-')
     return name if suffix is None else name + '-' + str(suffix)
 
+def initialise_b2_api():
+    info = InMemoryAccountInfo()
+    b2_api = B2Api(info)
+    application_key_id = os.getenv('B2_APPLICATION_KEY_ID')
+    application_key = os.getenv('B2_APPLICATION_KEY')
+    b2_api.authorize_account("production", application_key_id, application_key)
+    return b2_api
+
+def get_latest_file(sftp):
+    path = 'free/prod217'
+    path += '/' + get_latest_child_dir(sftp, path)
+    path += '/' + get_latest_child_dir(sftp, path)
+    path += '/' + get_latest_child_dir(sftp, path)
+    path += '/prod217.csv'
+    return path
+
 def main():
     if os.path.isdir('temp/'):
         shutil.rmtree('temp/', ignore_errors=True)
@@ -35,23 +51,14 @@ def main():
     if os.path.isdir('output/'):
         shutil.rmtree('output/', ignore_errors=True)
 
-    info = InMemoryAccountInfo()
-    b2_api = B2Api(info)
-    application_key_id = os.getenv('B2_APPLICATION_KEY_ID')
-    application_key = os.getenv('B2_APPLICATION_KEY')
-    b2_api.authorize_account("production", application_key_id, application_key)
-
     file_path = ''
 
     bucket = None
 
     with Connection(os.getenv('CH_URL'), user=os.getenv('CH_USER'), connect_kwargs={"key_filename": os.getenv('SSH_KEY_PATH')}) as c:
-        path = 'free/prod217'
         with c.sftp() as sftp:
-            path += '/' + get_latest_child_dir(sftp, path)
-            path += '/' + get_latest_child_dir(sftp, path)
-            path += '/' + get_latest_child_dir(sftp, path)
-            path += '/prod217.csv'
+            path = get_latest_file(sftp)
+            b2_api = initialise_b2_api()
 
             temp_path = 'temp/' + path
             local_path = 'local/' + path
@@ -139,7 +146,7 @@ def main():
             with open(output_dir + row['CompanyNumber'] + '.json', 'w') as f:
                 json.dump(company, f)
             
-            if i % 1000 == 0:
+            if i % 100000 == 0:
                 print(i)
 
     counter = 0
