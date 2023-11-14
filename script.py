@@ -131,6 +131,10 @@ def main():
             path = get_latest_file(sftp)
             b2_api = initialise_b2_api()
 
+            for bucket in b2_api.list_buckets():
+                if bucket.bucket_info["fileCount"] == "0":
+                    bucket.delete_bucket()
+
             temp_path = "temp/" + path
             local_path = "local/" + path
 
