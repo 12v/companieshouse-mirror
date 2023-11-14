@@ -104,7 +104,6 @@ def process_chunk(chunk, bucket):
         body = json.dumps(generate_json_from_csv(row))
         file_name = row["CompanyNumber"] + ".json"
         bucket.upload_bytes(body.encode("utf-8"), file_name)
-        print(body, flush=True)
 
     with concurrent.futures.ThreadPoolExecutor(12) as executor:
         futures = {
