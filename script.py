@@ -116,11 +116,6 @@ def process_chunk(chunk, bucket):
                 )
                 raise
 
-    print("Chunk size: " + str(len(chunk)), flush=True)
-    print(
-        "Items per second: " + str(len(chunk) / (time.time() - start_time)), flush=True
-    )
-
 
 def main():
     start_time = time.time()
@@ -194,7 +189,7 @@ def main():
 
         os.remove(local_zip)
 
-    chunk_size = 100
+    chunk_size = 1000
     total_rows = sum(1 for _ in csv.reader(open(file_path))) - 1
 
     bucket_info = bucket.bucket_info
@@ -215,7 +210,6 @@ def main():
 
         while True:
             chunk = list(islice(csv_dict_reader, chunk_size))
-            chunk_size = int(chunk_size * 1.5)
             if not chunk:
                 break
 
