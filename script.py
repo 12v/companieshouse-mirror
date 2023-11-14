@@ -108,8 +108,11 @@ def process_chunk(chunk, output_dir):
         with open(output_dir + row["CompanyNumber"] + ".json", "w") as f:
             json.dump(generate_json_from_csv(row), f)
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.map(upload_file, os.listdir(output_dir))
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     executor.map(upload_file, os.listdir(output_dir))
+
+    for file_name in os.listdir(output_dir):
+        upload_file(file_name)
 
     shutil.rmtree(output_dir, ignore_errors=True)
 
@@ -226,9 +229,9 @@ def main():
         if chunk:
             process_chunk(chunk, output_dir)
 
-    bucket_info = bucket.bucket_info
-    bucket_info["complete"] = "true"
-    bucket.set_info(bucket_info)
+    # bucket_info = bucket.bucket_info
+    # bucket_info["complete"] = "true"
+    # bucket.set_info(bucket_info)
 
 
 if __name__ == "__main__":
