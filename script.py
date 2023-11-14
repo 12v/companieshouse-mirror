@@ -99,18 +99,20 @@ def main():
             
             file_path = local_path
 
-    url = 'https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip'
-    local_zip = 'BasicCompanyDataAsOneFile-2023-11-01.zip'
     file_path = 'BasicCompanyDataAsOneFile-2023-11-01.csv'
 
-    response = requests.get(url, verify=False)
-    with open(local_zip, 'wb') as file:
-        file.write(response.content)
+    if not os.path.isfile(file_path):
+        url = 'https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip'
+        local_zip = 'BasicCompanyDataAsOneFile-2023-11-01.zip'
+        response = requests.get(url, verify=False)
+        with open(local_zip, 'wb') as file:
+            file.write(response.content)
 
-    with zipfile.ZipFile(local_zip, 'r') as zip_ref:
-        zip_ref.extractall()
+        with zipfile.ZipFile(local_zip, 'r') as zip_ref:
+            zip_ref.extractall()
 
-    print(os.listdir('.'))
+        # delete zip file
+        os.remove(local_zip)
     
     output_dir = './output/companies/'
     os.makedirs(output_dir, exist_ok=True)
@@ -146,7 +148,7 @@ def main():
             with open(output_dir + row['CompanyNumber'] + '.json', 'w') as f:
                 json.dump(company, f)
             
-            if i % 100000 == 0:
+            if i % 10000 == 0:
                 print(i)
 
     counter = 0
