@@ -135,10 +135,10 @@ def main():
 
             for bucket in b2_api.list_buckets():
                 try:
-                    bucket.delete_bucket()
-                    print("Deleted bucket " + bucket.bucket_name, flush=True)
+                    b2_api.delete_bucket(bucket)
+                    print("Deleted bucket " + bucket.name, flush=True)
                 except Exception as e:
-                    print("Couldn't delete bucket " + bucket.bucket_name)
+                    print("Couldn't delete bucket " + bucket.name)
                     print(e)
 
             temp_path = "temp/" + path
