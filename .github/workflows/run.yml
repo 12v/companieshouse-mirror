@@ -1,5 +1,9 @@
 name: Run Python script
 
+concurrency: 
+  group: my-workflow
+  cancel-in-progress: false
+
 on:
   push:
     branches: [ main ]
