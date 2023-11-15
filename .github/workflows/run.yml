@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: ./.github/workflows/python-setup.yml@main
+    - uses: ./.github/workflows/python-setup.yml
     - name: Run script
       run: python plan.py
       id: plan
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: ./.github/workflows/python-setup.yml@main
+    - uses: ./.github/workflows/python-setup.yml
     - name: Download artifact
       uses: actions/download-artifact@v3
       with:
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: ./.github/workflows/python-setup.yml@main
+    - uses: ./.github/workflows/python-setup.yml
     - name: Run script
       env:
         FILE_NAME: ${{ needs.plan.outputs.file_name }}
