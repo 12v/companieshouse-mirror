@@ -97,7 +97,11 @@ def generate_json_from_csv(row):
     return company
 
 
+max_workers = 1
+
+
 def process_chunk(chunk, bucket):
+    global max_workers
     start_time = time.time()
 
     def upload_file(row):
@@ -105,7 +109,8 @@ def process_chunk(chunk, bucket):
         file_name = row["CompanyNumber"] + ".json"
         bucket.upload_bytes(body.encode("utf-8"), file_name)
 
-    with concurrent.futures.ThreadPoolExecutor(12) as executor:
+    print("Max workers: " + str(max_workers), flush=True)
+    with concurrent.futures.ThreadPoolExecutor(max_workers) as executor:
         futures = {
             executor.submit(upload_file, row): row["CompanyNumber"] for row in chunk
         }
@@ -117,6 +122,15 @@ def process_chunk(chunk, bucket):
                     f"File {futures[future]} generated an exception: {exc}", flush=True
                 )
                 raise
+
+    print(
+        "Chunk took "
+        + str(time.time() - start_time)
+        + " seconds with max workers "
+        + str(max_workers),
+        flush=True,
+    )
+    max_workers += 1
 
 
 def main():
@@ -191,7 +205,7 @@ def main():
 
         os.remove(local_zip)
 
-    chunk_size = 1000
+    chunk_size = 100
     total_rows = sum(1 for _ in csv.reader(open(file_path))) - 1
 
     bucket_info = bucket.bucket_info
