@@ -135,13 +135,13 @@ def main():
 
     b2_api = initialise_b2_api()
 
-    for bucket in b2_api.list_buckets():
-        print("Deleting bucket " + bucket.name, flush=True)
-    try:
-        b2_api.delete_bucket(bucket)
-        print("Deleted bucket " + bucket.name, flush=True)
-    except Exception as e:
-        print(e)
+    # for bucket in b2_api.list_buckets():
+    #     print("Deleting bucket " + bucket.name, flush=True)
+    # try:
+    #     b2_api.delete_bucket(bucket)
+    #     print("Deleted bucket " + bucket.name, flush=True)
+    # except Exception as e:
+    #     print(e)
 
     with Connection(
         os.getenv("CH_URL"),
