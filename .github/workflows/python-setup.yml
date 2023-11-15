@@ -1,0 +1,42 @@
+name: Python setup
+on:
+  workflow_call:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Add remote host key to known_hosts
+      run: |
+          mkdir ~/.ssh
+          ssh-keyscan ${{ secrets.CH_URL }} >> ~/.ssh/known_hosts
+      
+    - name: Add SSH key
+      run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/private_key
+          chmod 600 ~/.ssh/private_key
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+  
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Create .env file
+      run: |
+        echo B2_APPLICATION_KEY_ID=${{ secrets.B2_APPLICATION_KEY_ID }} >> .env
+        echo B2_APPLICATION_KEY=${{ secrets.B2_APPLICATION_KEY }} >> .env
+        echo CH_USER=${{ secrets.CH_USER }} >> .env
+        echo CH_URL=${{ secrets.CH_URL }} >> .env
+        echo SSH_KEY_PATH=~/.ssh/private_key >> .env
+
+    - name: Cache specific file
+      uses: actions/cache@v3
+      with:
+        path: artifacts/BasicCompanyDataAsOneFile-2023-11-01.csv
+        key: ${{ runner.os }}-file-${{ 'BasicCompanyDataAsOneFile-2023-11-01.csv' }}
