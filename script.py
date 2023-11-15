@@ -30,11 +30,6 @@ def get_latest_child_dir(sftp, path):
     return sorted(dirs, reverse=True)[0]
 
 
-def convert_path_to_bucket(path, prefix, suffix=None):
-    name = prefix + "-" + path.replace("/", "-").replace(".", "-")
-    return name if suffix is None else name + "-" + str(suffix)
-
-
 def initialise_b2_api():
     info = InMemoryAccountInfo()
     b2_api = B2Api(info)
@@ -120,6 +115,14 @@ def process_chunk(chunk, bucket):
 def main():
     start_time = time.time()
 
+    if len(sys.argv) > 1:
+        instance_id = int(sys.argv[1])
+        instance_count = int(sys.argv[2])
+        print(
+            "Using offset " + str(instance_id) + " and total " + str(instance_count),
+            flush=True,
+        )
+
     if os.path.isdir("temp/"):
         shutil.rmtree("temp/", ignore_errors=True)
 
@@ -130,6 +133,16 @@ def main():
 
     bucket = None
 
+    b2_api = initialise_b2_api()
+
+    for bucket in b2_api.list_buckets():
+        print("Deleting bucket " + bucket.name, flush=True)
+    try:
+        b2_api.delete_bucket(bucket)
+        print("Deleted bucket " + bucket.name, flush=True)
+    except Exception as e:
+        print(e)
+
     with Connection(
         os.getenv("CH_URL"),
         user=os.getenv("CH_USER"),
@@ -137,20 +150,11 @@ def main():
     ) as c:
         with c.sftp() as sftp:
             path = get_latest_file(sftp)
-            b2_api = initialise_b2_api()
-
-            for bucket in b2_api.list_buckets():
-                print("Deleting bucket " + bucket.name, flush=True)
-                try:
-                    b2_api.delete_bucket(bucket)
-                    print("Deleted bucket " + bucket.name, flush=True)
-                except Exception as e:
-                    print(e)
 
             temp_path = "temp/" + path
-            local_path = "local/" + path
+            file_path = "local/" + path
 
-            bucket_name = convert_path_to_bucket(path, "companies")
+            bucket_name = "companies"
 
             try:
                 bucket = b2_api.get_bucket_by_name(bucket_name)
@@ -160,8 +164,10 @@ def main():
                 bucket = b2_api.create_bucket(bucket_name, "allPrivate")
                 print("Bucket created")
 
+            file_path = "BasicCompanyDataAsOneFile-2023-11-01.csv"
+
             bucket_info = bucket.bucket_info
-            if "complete" not in bucket_info or bucket_info["complete"] != "true":
+            if file_path not in bucket_info or bucket_info[file_path] != "true":
                 print("Bucket exists but is not complete, continuing")
             else:
                 print("Bucket already exists and is complete")
@@ -170,33 +176,31 @@ def main():
             # if not os.path.isfile('local/' + path):
             #     os.makedirs(os.path.dirname(temp_path))
             #     sftp.get(path, localpath=temp_path, callback=lambda x,y: print('Downloading: ' + str(x) + ' of ' + str(y) if x % 1000 == 0 else None, end='\r'))
-            #     os.makedirs(os.path.dirname(local_path), exist_ok=True)
-            #     os.rename(temp_path, local_path)
+            #     os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            #     os.rename(temp_path, file_path)
 
-            file_path = local_path
+            if not os.path.isfile(file_path):
+                url = "https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip"
+                local_zip = "BasicCompanyDataAsOneFile-2023-11-01.zip"
+                response = requests.get(url, verify=False)
+                with open(local_zip, "wb") as file:
+                    file.write(response.content)
 
-    file_path = "BasicCompanyDataAsOneFile-2023-11-01.csv"
+                with zipfile.ZipFile(local_zip, "r") as zip_ref:
+                    zip_ref.extractall()
 
-    if not os.path.isfile(file_path):
-        url = "https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip"
-        local_zip = "BasicCompanyDataAsOneFile-2023-11-01.zip"
-        response = requests.get(url, verify=False)
-        with open(local_zip, "wb") as file:
-            file.write(response.content)
-
-        with zipfile.ZipFile(local_zip, "r") as zip_ref:
-            zip_ref.extractall()
-
-        os.remove(local_zip)
+                os.remove(local_zip)
 
     chunk_size = 1000
     total_rows = sum(1 for _ in csv.reader(open(file_path))) - 1
 
-    bucket_info = bucket.bucket_info
-    start_index = int(bucket_info.get("progress", 0))
-    processed_rows = start_index
+    # bucket_info = bucket.bucket_info
+    # start_index = int(bucket_info.get("progress", 0))
+    # processed_rows = start_index
 
-    print("Starting at row " + str(start_index) + " of " + str(total_rows), flush=True)
+    # print("Starting at row " + str(start_index) + " of " + str(total_rows), flush=True)
+
+    start_index = 0
 
     with open(file_path) as file:
         csv_reader = csv.reader(file)
@@ -205,21 +209,32 @@ def main():
 
         csv_dict_reader = csv.DictReader(file, fieldnames=trimmed_header_row)
 
-        for _ in range(start_index):
-            next(csv_dict_reader, None)
+        # for _ in range(start_index):
+        #     next(csv_dict_reader, None)
 
         while True:
+            for _ in range(instance_id * chunk_size):
+                next(csv_dict_reader, None)
+                start_index += 1
+
             chunk = list(islice(csv_dict_reader, chunk_size))
             if not chunk:
                 break
 
             process_chunk(chunk, bucket)
-            processed_rows += len(chunk)
-            print(f"Processed {processed_rows} of {total_rows} rows", flush=True)
+            print(
+                f"Processed rows {start_index} through {start_index + chunk_size - 1} of {total_rows} rows",
+                flush=True,
+            )
+            start_index += chunk_size
 
-            bucket_info = bucket.bucket_info
-            bucket_info["progress"] = str(processed_rows)
-            bucket.set_info(bucket_info)
+            for _ in range((instance_count - 1) * chunk_size):
+                next(csv_dict_reader, None)
+                start_index += 1
+
+            # bucket_info = bucket.bucket_info
+            # bucket_info["progress"] = str(processed_rows)
+            # bucket.set_info(bucket_info)
 
             elapsed_time = time.time() - start_time
             if elapsed_time > (6 * 60 - 10) * 60:
@@ -227,7 +242,7 @@ def main():
                 sys.exit()
 
     bucket_info = bucket.bucket_info
-    bucket_info["complete"] = "true"
+    bucket_info[file_path] = "true"
     bucket.set_info(bucket_info)
 
 
