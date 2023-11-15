@@ -16,7 +16,7 @@ on:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    uses: ./.github/workflows/python-setup.yml
+    uses: ./.github/workflows/python-setup
     steps:
     - name: Run script
       run: python plan.py
@@ -33,7 +33,7 @@ jobs:
 
   process:
     needs: plan
-    uses: ./.github/workflows/python-setup.yml
+    uses: ./.github/workflows/python-setup
     strategy:
       matrix:
         offset: ${{ fromJson(needs.plan.outputs.matrix) }}
@@ -52,7 +52,7 @@ jobs:
   
   conclude:
     needs: [plan, process]
-    uses: ./.github/workflows/python-setup.yml
+    uses: ./.github/workflows/python-setup
     runs-on: ubuntu-latest
     steps:
     - name: Run script

@@ -1,11 +1,7 @@
-name: Python setup
-on:
-  workflow_call:
-
-jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
+name: 'Python Setup'
+runs:
+  using: "composite"
+  steps:
     - uses: actions/checkout@v4
     - name: Add remote host key to known_hosts
       run: |
