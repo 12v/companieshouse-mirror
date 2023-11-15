@@ -65,5 +65,7 @@ jobs:
         path: BasicCompanyDataAsOneFile-2023-11-01.csv
         key: ${{ runner.os }}-file-${{ 'BasicCompanyDataAsOneFile-2023-11-01.csv' }}
 
-    - name: Run script {{ matrix.offset }} of 20
-      run: python script.py {{ matrix.offset }} 20
+    - name: Run script
+      env:
+        OFFSET: ${{ matrix.offset }}
+      run: python script.py $OFFSET 20
