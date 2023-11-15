@@ -154,7 +154,7 @@ def main():
             temp_path = "temp/" + path
             file_path = "local/" + path
 
-            bucket_name = "companies"
+            bucket_name = "sugartrail-companies"
 
             try:
                 bucket = b2_api.get_bucket_by_name(bucket_name)
