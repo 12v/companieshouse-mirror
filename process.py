@@ -110,8 +110,10 @@ def main():
         for _ in range(start_index):
             next(csv_dict_reader, None)
 
+        batch = islice(csv_dict_reader, batch_size)
+
         while True:
-            chunk = list(islice(csv_dict_reader, chunk_size))
+            chunk = list(islice(batch, chunk_size))
             if not chunk:
                 break
 
