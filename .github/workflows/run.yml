@@ -29,6 +29,7 @@ jobs:
       run: python plan.py
       id: plan
     - name: Upload artifact
+      if: steps.plan.outputs.matrix != '[]'
       uses: actions/upload-artifact@v3
       with:
         name: artifacts
@@ -40,6 +41,7 @@ jobs:
 
   process:
     needs: plan
+    if: needs.plan.outputs.matrix != '[]'
     strategy:
       matrix:
         offset: ${{ fromJson(needs.plan.outputs.matrix) }}
@@ -65,6 +67,7 @@ jobs:
   
   conclude:
     needs: [plan, process]
+    if: needs.plan.outputs.matrix != '[]'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
