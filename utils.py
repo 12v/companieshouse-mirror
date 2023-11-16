@@ -17,10 +17,10 @@ def get_companies_bucket(b2_api):
 
     try:
         bucket = b2_api.get_bucket_by_name(bucket_name)
-        print("Bucket exists")
+        print("Bucket with name " + bucket_name + " found", flush=True)
     except exception.NonExistentBucket:
-        print("Bucket doesn't exist, creating")
+        print("Bucket with name " + bucket_name + " not found", flush=True)
         bucket = b2_api.create_bucket(bucket_name, "allPrivate")
-        print("Bucket created")
+        print("Bucket with name " + bucket_name + " created", flush=True)
 
     return bucket

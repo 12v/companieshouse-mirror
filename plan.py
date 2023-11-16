@@ -23,16 +23,9 @@ def get_latest_file(sftp):
     return path
 
 
-def print_contents(sftp):
-    files = sftp.listdir()
-    print("Current directory: {}".format(sftp.getcwd()))
-    for file in files:
-        print(file)
-
-
 def set_output(name, value):
-    print("Setting output " + name + " to " + value)
-    print("::set-output name=" + name + "::" + value)
+    print("Setting output " + name + " to " + value, flush=True)
+    print("::set-output name=" + name + "::" + value, flush=True)
 
 
 def main():
@@ -43,13 +36,13 @@ def main():
 
     b2_api = initialise_b2_api()
 
-    # for bucket in b2_api.list_buckets():
-    #     print("Deleting bucket " + bucket.name)
-    # try:
-    #     b2_api.delete_bucket(bucket)
-    #     print("Deleted bucket " + bucket.name)
-    # except Exception as e:
-    #     print(e)
+    for bucket in b2_api.list_buckets():
+        print("Deleting bucket " + bucket.name, flush=True)
+    try:
+        b2_api.delete_bucket(bucket)
+        print("Deleted bucket " + bucket.name, flush=True)
+    except Exception as e:
+        print(e)
 
     os.makedirs("artifacts/", exist_ok=True)
 
@@ -65,7 +58,7 @@ def main():
         with c.sftp() as sftp:
             path = get_latest_file(sftp)
 
-            print("Found latest file: " + path)
+            print("Found latest file: " + path, flush=True)
 
             # temp_path = "temp/" + path
             file_path = "local/" + path
@@ -79,10 +72,15 @@ def main():
             bucket = get_companies_bucket(b2_api)
 
             bucket_info = bucket.bucket_info
-            if file_name not in bucket_info or bucket_info[file_name] != "true":
-                print("Bucket exists but is not complete, continuing")
+            print("Bucket info: " + str(bucket_info), flush=True)
+
+            if (
+                file_name.lower() not in bucket_info
+                or bucket_info[file_name.lower()] != "true"
+            ):
+                print("Bucket exists but is not complete, continuing", flush=True)
             else:
-                print("Bucket already exists and is complete")
+                print("Bucket exists and is complete", flush=True)
                 set_output("matrix", "[]")
                 exit()
 

@@ -13,7 +13,7 @@ def main():
     bucket = get_companies_bucket(b2_api)
 
     bucket_info = bucket.bucket_info
-    bucket_info[file_name] = "true"
+    bucket_info[file_name.lower()] = "true"
     bucket.set_info(bucket_info)
 
 
