@@ -31,7 +31,6 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: artifacts
         path: artifacts
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
@@ -56,7 +55,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v3
       with:
-        name: artifacts
+        path: artifacts
     - name: Run script
       env:
         OFFSET: ${{ matrix.offset }}
