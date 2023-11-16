@@ -30,6 +30,11 @@ def print_contents(sftp):
         print(file)
 
 
+def set_output(name, value):
+    print("Setting output " + name + " to " + value)
+    print("::set-output name=" + name + "::" + value)
+
+
 def main():
     load_dotenv()
 
@@ -39,10 +44,10 @@ def main():
     b2_api = initialise_b2_api()
 
     # for bucket in b2_api.list_buckets():
-    #     print("Deleting bucket " + bucket.name, flush=True)
+    #     print("Deleting bucket " + bucket.name)
     # try:
     #     b2_api.delete_bucket(bucket)
-    #     print("Deleted bucket " + bucket.name, flush=True)
+    #     print("Deleted bucket " + bucket.name)
     # except Exception as e:
     #     print(e)
 
@@ -50,7 +55,7 @@ def main():
 
     batch_size = 100000
 
-    print("::set-output name=batch_size::" + str(batch_size))
+    set_output("batch_size", str(batch_size))
 
     with Connection(
         os.getenv("CH_URL"),
@@ -60,12 +65,14 @@ def main():
         with c.sftp() as sftp:
             path = get_latest_file(sftp)
 
+            print("Found latest file: " + path)
+
             # temp_path = "temp/" + path
             file_path = "local/" + path
 
             file_name = "BasicCompanyDataAsOneFile-2023-11-01.csv"
 
-            print("::set-output name=file_name::" + file_name)
+            set_output("file_name", file_name)
 
             file_path = "artifacts/" + file_name
 
@@ -76,7 +83,7 @@ def main():
                 print("Bucket exists but is not complete, continuing")
             else:
                 print("Bucket already exists and is complete")
-                print("::set-output name=array::[]")
+                set_output("matrix", "[]")
                 exit()
 
             # if not os.path.isfile('local/' + path):
@@ -93,16 +100,14 @@ def main():
                     file.write(response.content)
 
                 with zipfile.ZipFile(local_zip, "r") as zip_ref:
-                    zip_ref.extractall()
+                    zip_ref.extractall("artifacts")
 
                 os.remove(local_zip)
 
             file_line_count = sum(1 for _ in open(file_path)) - 2
 
-            print(
-                "::set-output name=array::"
-                + json.dumps(list(range(0, file_line_count, batch_size)))
-            )
+            matrix = json.dumps(list(range(0, file_line_count, batch_size)))
+            set_output("matrix", matrix)
 
 
 if __name__ == "__main__":

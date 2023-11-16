@@ -68,9 +68,7 @@ def process_chunk(chunk, bucket):
             try:
                 future.result()
             except Exception as exc:
-                print(
-                    f"File {futures[future]} generated an exception: {exc}", flush=True
-                )
+                print(f"File {futures[future]} generated an exception: {exc}")
                 raise
 
 
@@ -85,7 +83,6 @@ def main():
         + str(start_index)
         + " with batch size of "
         + str(batch_size),
-        flush=True,
     )
 
     files = os.listdir("artifacts")
@@ -116,7 +113,6 @@ def main():
             process_chunk(chunk, bucket)
             print(
                 f"Processed rows {start_index} through {start_index + len(chunk) - 1}",
-                flush=True,
             )
             start_index += chunk_size
 
