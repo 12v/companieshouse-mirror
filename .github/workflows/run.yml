@@ -57,12 +57,11 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: artifacts
-
     - name: Run script
       env:
         OFFSET: ${{ matrix.offset }}
         BATCH_SIZE: ${{ needs.plan.outputs.batch_size }}
-      run: python script.py $OFFSET $BATCH_SIZE
+      run: python process.py $OFFSET $BATCH_SIZE
   
   conclude:
     needs: [plan, process]
