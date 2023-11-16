@@ -19,6 +19,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/workflows/python-setup
+      with:
+        CH_URL: ${{ secrets.CH_URL }}
+        CH_USER: ${{ secrets.CH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Run script
       run: python plan.py
       id: plan
@@ -41,6 +47,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/workflows/python-setup
+      with:
+        CH_URL: ${{ secrets.CH_URL }}
+        CH_USER: ${{ secrets.CH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Download artifact
       uses: actions/download-artifact@v3
       with:
@@ -58,6 +70,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/workflows/python-setup
+      with:
+        CH_URL: ${{ secrets.CH_URL }}
+        CH_USER: ${{ secrets.CH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Run script
       env:
         FILE_NAME: ${{ needs.plan.outputs.file_name }}

@@ -1,15 +1,28 @@
 name: 'Python Setup'
+
+inputs:
+  CH_URL:
+    required: true
+  CH_USER:
+    required: true
+  SSH_PRIVATE_KEY:
+    required: true
+  B2_APPLICATION_KEY_ID:
+    required: true
+  B2_APPLICATION_KEY:
+    required: true
+
 runs:
   using: "composite"
   steps:
     - name: Add remote host key to known_hosts
       run: |
           mkdir ~/.ssh
-          ssh-keyscan ${{ secrets.CH_URL }} >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ inputs.CH_URL }} >> ~/.ssh/known_hosts
       
     - name: Add SSH key
       run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/private_key
+          echo "${{ inputs.SSH_PRIVATE_KEY }}" > ~/.ssh/private_key
           chmod 600 ~/.ssh/private_key
 
     - name: Set up Python
@@ -23,10 +36,10 @@ runs:
 
     - name: Create .env file
       run: |
-        echo B2_APPLICATION_KEY_ID=${{ secrets.B2_APPLICATION_KEY_ID }} >> .env
-        echo B2_APPLICATION_KEY=${{ secrets.B2_APPLICATION_KEY }} >> .env
-        echo CH_USER=${{ secrets.CH_USER }} >> .env
-        echo CH_URL=${{ secrets.CH_URL }} >> .env
+        echo B2_APPLICATION_KEY_ID=${{ inputs.B2_APPLICATION_KEY_ID }} >> .env
+        echo B2_APPLICATION_KEY=${{ inputs.B2_APPLICATION_KEY }} >> .env
+        echo CH_USER=${{ inputs.CH_USER }} >> .env
+        echo CH_URL=${{ inputs.CH_URL }} >> .env
         echo SSH_KEY_PATH=~/.ssh/private_key >> .env
 
     - name: Cache specific file
