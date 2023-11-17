@@ -19,13 +19,12 @@ def main(key, path):
 
     set_output("batch_size", str(batch_size))
 
-    url_override = is_url(path)
-
     artifacts_subdirectory = os.path.join(artifacts_dir, key)
     if not os.path.isdir(artifacts_subdirectory):
         os.makedirs(artifacts_subdirectory, exist_ok=True)
 
-        if url_override:
+        print(path + " is url: " + str(is_url(path)), flush=True)
+        if is_url(path):
             download_from_url(artifacts_subdirectory, path)
         else:
             download_from_sftp(artifacts_subdirectory, path)
