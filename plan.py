@@ -110,4 +110,4 @@ if __name__ == "__main__":
     parser.add_argument("--path", required=True)
     args = parser.parse_args()
 
-    main(args.product, args.override)
+    main(args.key, args.path)
