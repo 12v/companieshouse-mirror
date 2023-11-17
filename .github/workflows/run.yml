@@ -51,11 +51,11 @@ jobs:
         path: artifacts
         key: ${{ needs.check.outputs.key }}
     - name: Run script
-      run: python plan.py --key=$KEY --path=$PATH
+      run: python plan.py --key=$KEY --path=$DIR_PATH
       id: plan
       env:
         KEY: ${{ needs.check.outputs.key }}
-        PATH: ${{ needs.check.outputs.path }}
+        DIR_PATH: ${{ needs.check.outputs.path }}
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
