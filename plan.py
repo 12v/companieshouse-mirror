@@ -1,102 +1,94 @@
 import os
-import sys
 import shutil
 from fabric import Connection
 import requests
-import stat
 import zipfile
 from dotenv import load_dotenv
 import json
+import argparse
 
-from utils import initialise_b2_api, get_companies_bucket
+from utils import is_url, set_output
+
+artifacts_dir = "artifacts"
+batch_size = 100000
+file_extension_to_header_row_count = {".csv": 1, ".dat": 2}
 
 
-def main():
+def main(key, path):
     load_dotenv()
-
-    b2_api = initialise_b2_api()
-
-    delete_empty_buckets(b2_api)
-
-    os.makedirs("artifacts/", exist_ok=True)
-
-    batch_size = 100000
 
     set_output("batch_size", str(batch_size))
 
-    artifacts_dir = "artifacts"
+    url_override = is_url(path)
 
-    path = find_latest_directory("prod217")
+    artifacts_subdirectory = os.path.join(artifacts_dir, key)
+    if not os.path.isdir(artifacts_subdirectory):
+        os.makedirs(artifacts_subdirectory, exist_ok=True)
 
-    override = False
+        if url_override:
+            download_from_url(artifacts_subdirectory, path)
+        else:
+            download_from_sftp(artifacts_subdirectory, path)
 
-    if len(sys.argv[1]) > 0:
-        path = sys.argv[1]
-        override = True
-
-    set_output("file_name", path)
-
-    if is_batch_processed(b2_api, path):
-        print("Batch " + path + " is processed, exiting", flush=True)
-        set_output("matrix", "[]")
-        exit()
-    else:
-        print("Batch " + path + " is not processed, continuing", flush=True)
-
-    if override:
-        if not os.path.isdir(os.path.join(artifacts_dir, path)):
-            download_from_override(sys.argv[1])
-    else:
-        if not os.path.isdir(os.path.join(artifacts_dir, path)):
-            download_from_sftp(path)
-
-    file_path = os.path.join(artifacts_dir, file_name)
-    file_name = "BasicCompanyDataAsOneFile-2023-11-01.csv"
-
-    file_line_count = sum(1 for _ in open(file_path)) - 2
-    matrix = json.dumps(list(range(0, file_line_count, batch_size)))
-    set_output("matrix", matrix)
+    matrix = create_matrix(artifacts_subdirectory)
+    set_output("matrix", json.dumps(matrix))
 
 
-def download_from_override():
-    url = "https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip"
-    local_zip = "download.zip"
-    response = requests.get(url, verify=False)
+def create_matrix(directory):
+    matrix = []
+
+    for file in os.listdir(directory):
+        with open(os.path.join(directory, file), "r") as f:
+            header_row_count = file_extension_to_header_row_count[
+                os.path.splitext(file)[1]
+            ]
+            file_line_count = sum(1 for line in f if line.strip()) - header_row_count
+
+            matrix.extend(
+                [
+                    file + "::" + str(offset)
+                    for offset in range(0, file_line_count, batch_size)
+                ]
+            )
+
+    return matrix
+
+
+def download_from_url(directory, path):
+    local_zip = "download"
+    response = requests.get(path, verify=False)
     with open(local_zip, "wb") as file:
         file.write(response.content)
 
     with zipfile.ZipFile(local_zip, "r") as zip_ref:
-        zip_ref.extractall("artifacts")
+        zip_ref.extractall(directory)
 
     os.remove(local_zip)
 
 
-def is_batch_processed(b2_api, key):
-    bucket = get_companies_bucket(b2_api)
-
-    bucket_info = bucket.bucket_info
-    print("Bucket info: " + str(bucket_info), flush=True)
-
-    return key.lower() not in bucket_info or bucket_info[key.lower()] != "true"
-
-
-def download_from_sftp(path):
+def download_from_sftp(directory, path):
     with Connection(
         os.getenv("CH_URL"),
         user=os.getenv("CH_USER"),
         connect_kwargs={"key_filename": os.getenv("SSH_KEY_PATH")},
     ) as c, c.sftp() as sftp:
         with c.sftp() as sftp:
-            if os.path.isdir("temp/"):
-                shutil.rmtree("temp/", ignore_errors=True)
+            temp_dir = "temp"
 
-            os.mkdir("temp")
+            if os.path.isdir(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+            os.mkdir(temp_dir)
             for file in sftp.listdir(path):
                 full_sftp_path = os.path.join(path, file)
-                print("Downloading " + full_sftp_path, flush=True)
+                full_temp_path = os.path.join(temp_dir, file)
+                print(
+                    "Downloading " + full_sftp_path + " to " + full_temp_path,
+                    flush=True,
+                )
                 sftp.get(
                     full_sftp_path,
-                    localpath=os.path.join("temp", file),
+                    localpath=full_temp_path,
                     callback=lambda x, y: print(
                         "Downloading: " + str(x) + " of " + str(y)
                         if x % 1000 == 0
@@ -104,52 +96,18 @@ def download_from_sftp(path):
                         end="\r",
                     ),
                 )
-                print("Downloaded " + full_sftp_path, flush=True)
+                print(
+                    "Downloaded " + full_sftp_path + " to " + full_temp_path, flush=True
+                )
 
-            for file in os.listdir("temp"):
-                os.rename(os.path.join("temp", file), os.path.join("artifacts", file))
-
-
-def find_latest_directory(product):
-    with Connection(
-        os.getenv("CH_URL"),
-        user=os.getenv("CH_USER"),
-        connect_kwargs={"key_filename": os.getenv("SSH_KEY_PATH")},
-    ) as c:
-        with c.sftp() as sftp:
-            path = "free/" + product
-            # year
-            path += "/" + get_latest_child_dir(sftp, path)
-            # month
-            path += "/" + get_latest_child_dir(sftp, path)
-            # day
-            path += "/" + get_latest_child_dir(sftp, path)
-
-            print("Found latest directory: " + path, flush=True)
-
-            return path
-
-
-def delete_empty_buckets(b2_api):
-    for bucket in b2_api.list_buckets():
-        print("Deleting bucket " + bucket.name, flush=True)
-    try:
-        b2_api.delete_bucket(bucket)
-        print("Deleted bucket " + bucket.name, flush=True)
-    except Exception as e:
-        print(e)
-
-
-def get_latest_child_dir(sftp, path):
-    dirs = [x.filename for x in sftp.listdir_attr(path) if stat.S_ISDIR(x.st_mode)]
-    return sorted(dirs, reverse=True)[0]
-
-
-def set_output(name, value):
-    with open(os.getenv("GITHUB_OUTPUT", "/dev/null"), "a") as f:
-        f.write(f"{name}={value}\n")
-    print("Setting output " + name + " to " + value, flush=True)
+            for file in os.listdir(temp_dir):
+                os.rename(os.path.join(temp_dir, file), os.path.join(directory, file))
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--key", required=True)
+    parser.add_argument("--path", required=True)
+    args = parser.parse_args()
+
+    main(args.product, args.override)

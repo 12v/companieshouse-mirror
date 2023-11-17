@@ -14,7 +14,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  plan:
+  check:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -26,22 +26,48 @@ jobs:
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Run script
-      run: python plan.py https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip
+      run: python check.py --product=https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip
+      id: check
+    outputs:
+      key: ${{ steps.check.outputs.key }}
+      path: ${{ steps.check.outputs.path }}
+
+  plan:
+    needs: check
+    if: needs.check.outputs.key
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/workflows/python-setup
+      with:
+        CH_URL: ${{ secrets.CH_URL }}
+        CH_USER: ${{ secrets.CH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+    - name: Cache artifacts
+      uses: actions/cache@v3
+      with:
+        path: artifacts
+        key: ${{ needs.check.outputs.key }}
+    - name: Run script
+      run: python plan.py --key=$KEY --path=$PATH
       id: plan
+      env:
+        KEY: ${{ needs.check.outputs.key }}
+        PATH: ${{ needs.check.outputs.path }}
     - name: Upload artifact
-      if: steps.plan.outputs.matrix != '[]'
       uses: actions/upload-artifact@v3
       with:
-        name: artifacts
+        name: ${{ needs.check.outputs.key }}
         path: artifacts
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       batch_size: ${{ steps.plan.outputs.batch_size }}
-      file_name: ${{ steps.plan.outputs.file_name }}
 
   process:
-    needs: plan
-    if: needs.plan.outputs.matrix != '[]'
+    needs: [check, plan]
+    if: needs.check.outputs.key
     strategy:
       matrix:
         offset: ${{ fromJson(needs.plan.outputs.matrix) }}
@@ -58,16 +84,18 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v3
       with:
-        name: artifacts
+        name: ${{ needs.check.outputs.key }}
+        path: artifacts
     - name: Run script
       env:
         OFFSET: ${{ matrix.offset }}
         BATCH_SIZE: ${{ needs.plan.outputs.batch_size }}
-      run: python process.py $OFFSET $BATCH_SIZE
+        KEY: ${{ needs.check.outputs.key }}
+      run: python process.py --key=$KEY --offset=$OFFSET --batch_size=$BATCH_SIZE
   
   conclude:
-    needs: [plan, process]
-    if: needs.plan.outputs.matrix != '[]'
+    needs: [check, plan, process]
+    if: needs.check.outputs.key
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -80,5 +108,5 @@ jobs:
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Run script
       env:
-        FILE_NAME: ${{ needs.plan.outputs.file_name }}
-      run: python conclude.py $FILE_NAME
+        KEY: ${{ needs.check.outputs.key }}
+      run: python conclude.py --key=$KEY

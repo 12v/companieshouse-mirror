@@ -1,6 +1,7 @@
 from b2sdk.v2 import InMemoryAccountInfo
 from b2sdk.v2 import B2Api, exception
 import os
+from urllib.parse import urlparse
 
 
 def initialise_b2_api():
@@ -24,3 +25,17 @@ def get_companies_bucket(b2_api):
         print("Bucket with name " + bucket_name + " created", flush=True)
 
     return bucket
+
+
+def set_output(name, value):
+    with open(os.getenv("GITHUB_OUTPUT", "/dev/null"), "a") as f:
+        f.write(f"{name}={value}\n")
+    print("Setting output " + name + " to " + value, flush=True)
+
+
+def is_url(string):
+    try:
+        result = urlparse(string)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False

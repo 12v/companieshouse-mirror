@@ -45,9 +45,3 @@ runs:
         echo CH_USER=${{ inputs.CH_USER }} >> .env
         echo CH_URL=${{ inputs.CH_URL }} >> .env
         echo SSH_KEY_PATH=~/.ssh/private_key >> .env
-
-    - name: Cache specific file
-      uses: actions/cache@v3
-      with:
-        path: artifacts/BasicCompanyDataAsOneFile-2023-11-01.csv
-        key: ${{ runner.os }}-file-${{ 'BasicCompanyDataAsOneFile-2023-11-01.csv' }}
