@@ -17,7 +17,8 @@ def main(key, offset, batch_size):
 
     b2_api = initialise_b2_api()
 
-    file_name, start_index = offset.split("::")
+    file_name = offset.split("::")[0]
+    start_index = int(offset.split("::")[1])
 
     print(
         "Processing file "
