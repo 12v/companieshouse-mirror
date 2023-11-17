@@ -35,7 +35,12 @@ def set_output(name, value):
 
 def is_url(string):
     try:
+        print("Parsing " + string, flush=True)
         result = urlparse(string)
+        print("Result of parsing " + string + " is " + str(result), flush=True)
+        print(" Scheme: " + result.scheme, flush=True)
+        print(" Netloc: " + result.netloc, flush=True)
         return all([result.scheme, result.netloc])
-    except ValueError:
+    except ValueError as e:
+        print("URL parsing exception: " + str(e), flush=True)
         return False
