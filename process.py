@@ -138,4 +138,4 @@ if __name__ == "__main__":
     parser.add_argument("--offset", required=True)
     parser.add_argument("--batch_size", required=True)
     args = parser.parse_args()
-    main(args.key, args.offset, args.batch_size)
+    main(args.key, args.offset, int(args.batch_size))
