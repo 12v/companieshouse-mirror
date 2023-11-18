@@ -55,6 +55,18 @@ def create_matrix(directory):
 
 def download_from_url(directory, path):
     local_zip = "download"
+
+    for _ in range(3):
+        try:
+            requests.get(path, local_zip)
+            break
+        except requests.exceptions.ConnectTimeout as e:
+            print(e, flush=True)
+            continue
+    else:
+        print("Failed to download the file after 3 attempts.")
+        return
+
     response = requests.get(path, verify=False)
     with open(local_zip, "wb") as file:
         file.write(response.content)
