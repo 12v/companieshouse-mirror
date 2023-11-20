@@ -72,9 +72,9 @@ jobs:
   process:
     needs: [check, plan]
     if: needs.check.outputs.key
-    strategy:
-      matrix:
-        offset: ${{ fromJson(needs.plan.outputs.matrix) }}
+    # strategy:
+    #   matrix:
+    #     offset: ${{ fromJson(needs.plan.outputs.matrix) }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -92,7 +92,7 @@ jobs:
         path: artifacts
     - name: Run script
       env:
-        OFFSET: ${{ matrix.offset }}
+        OFFSET: 1#${{ matrix.offset }}
         BATCH_SIZE: ${{ needs.plan.outputs.batch_size }}
         KEY: ${{ needs.check.outputs.key }}
       run: python process.py --key=$KEY --offset=$OFFSET --batch_size=$BATCH_SIZE --type=$TYPE
