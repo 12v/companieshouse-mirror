@@ -63,11 +63,11 @@ def find_latest_directory(product):
 def delete_empty_buckets(b2_api):
     for bucket in b2_api.list_buckets():
         print("Deleting bucket " + bucket.name, flush=True)
-    try:
-        b2_api.delete_bucket(bucket)
-        print("Deleted bucket " + bucket.name, flush=True)
-    except Exception as e:
-        print(e)
+        try:
+            b2_api.delete_bucket(bucket)
+            print("Deleted bucket " + bucket.name, flush=True)
+        except Exception as e:
+            print(e)
 
 
 def get_latest_child_dir(sftp, path):
