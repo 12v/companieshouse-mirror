@@ -23,7 +23,6 @@ def main(key, path):
     if not os.path.isdir(artifacts_subdirectory):
         os.makedirs(artifacts_subdirectory, exist_ok=True)
 
-        print(path + " is url: " + str(is_url(path)), flush=True)
         if is_url(path):
             download_from_url(artifacts_subdirectory, path)
         else:
@@ -58,14 +57,14 @@ def download_from_url(directory, path):
 
     for _ in range(3):
         try:
-            requests.get(path, local_zip)
+            requests.get(path, local_zip, verify=False)
             break
         except requests.exceptions.ConnectTimeout as e:
             print(e, flush=True)
             continue
     else:
         print("Failed to download the file after 3 attempts.")
-        return
+        exit(1)
 
     response = requests.get(path, verify=False)
     with open(local_zip, "wb") as file:
