@@ -96,6 +96,11 @@ jobs:
         BATCH_SIZE: ${{ needs.plan.outputs.batch_size }}
         KEY: ${{ needs.check.outputs.key }}
       run: python process.py --key=$KEY --offset=$OFFSET --batch_size=$BATCH_SIZE --type=$TYPE
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ needs.check.outputs.key }}
+        path: artifacts/${{ needs.check.outputs.key }}_json
   
   conclude:
     needs: [check, plan, process]

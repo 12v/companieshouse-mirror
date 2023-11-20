@@ -10,9 +10,9 @@ from utils import initialise_b2_api, get_bucket, set_output, is_url
 def main(product, type):
     load_dotenv()
 
-    b2_api = initialise_b2_api()
+    # b2_api = initialise_b2_api()
 
-    delete_empty_buckets(b2_api)
+    # delete_empty_buckets(b2_api)
 
     url_override = is_url(product)
 
@@ -21,11 +21,11 @@ def main(product, type):
 
     key = product.lower().replace("/", "-").replace(":", "-")
 
-    if is_batch_processed(b2_api, key, type):
-        print("Batch " + key + " is processed, exiting", flush=True)
-        exit()
-    else:
-        print("Batch " + key + " is not processed, continuing", flush=True)
+    # if is_batch_processed(b2_api, key, type):
+    #     print("Batch " + key + " is processed, exiting", flush=True)
+    #     exit()
+    # else:
+    #     print("Batch " + key + " is not processed, continuing", flush=True)
 
     set_output("key", key)
     set_output("path", product)

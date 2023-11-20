@@ -15,20 +15,20 @@ artifacts_dir = "artifacts"
 def main(key, offset, batch_size, type):
     load_dotenv()
 
-    b2_api = initialise_b2_api()
+    # b2_api = initialise_b2_api()
 
-    file_name = offset.split("::")[0]
-    start_index = int(offset.split("::")[1])
+    # file_name = offset.split("::")[0]
+    # start_index = int(offset.split("::")[1])
 
-    print(
-        "Processing file "
-        + file_name
-        + " at row "
-        + str(start_index)
-        + " with batch size of "
-        + str(batch_size),
-        flush=True,
-    )
+    # print(
+    #     "Processing file "
+    #     + file_name
+    #     + " at row "
+    #     + str(start_index)
+    #     + " with batch size of "
+    #     + str(batch_size),
+    #     flush=True,
+    # )
 
     keys = os.listdir(artifacts_dir)
     print("Contents of artifacts directory: " + str(keys), flush=True)
@@ -37,35 +37,48 @@ def main(key, offset, batch_size, type):
     files = os.listdir(key_dir)
     print("Contents of " + key_dir + " directory: " + str(files), flush=True)
 
-    file_path = os.path.join(key_dir, file_name)
+    for file_name in files:
+        file_path = os.path.join(key_dir, file_name)
 
-    bucket = get_bucket(b2_api, type)
+        # bucket = get_bucket(b2_api, type)
 
-    chunk_size = 1000
+        # chunk_size = 1000
 
-    with open(file_path) as file:
-        csv_reader = csv.reader(file)
-        header_row = next(csv_reader)
-        trimmed_header_row = [x.strip() for x in header_row]
+        with open(file_path) as file:
+            csv_reader = csv.reader(file)
+            header_row = next(csv_reader)
+            trimmed_header_row = [x.strip() for x in header_row]
 
-        csv_dict_reader = csv.DictReader(file, fieldnames=trimmed_header_row)
+            csv_dict_reader = csv.DictReader(file, fieldnames=trimmed_header_row)
 
-        for _ in range(start_index):
-            next(csv_dict_reader, None)
+            new_dir = os.path.join(artifacts_dir, key + "_json")
+            os.makedirs(new_dir)
 
-        batch = islice(csv_dict_reader, batch_size)
+            for i, row in enumerate(csv_dict_reader):
+                company = generate_json_from_csv(row)
+                file_name = row["CompanyNumber"] + ".json"
+                with open(os.path.join(new_dir, file_name), "w") as f:
+                    f.write(json.dumps(company))
 
-        while True:
-            chunk = list(islice(batch, chunk_size))
-            if not chunk:
-                break
+                if i % 10000 == 0:
+                    print("Processed " + str(i) + " rows", flush=True)
 
-            process_chunk(chunk, bucket)
-            print(
-                f"Processed rows {start_index} through {start_index + len(chunk) - 1}",
-                flush=True,
-            )
-            start_index += chunk_size
+            # for _ in range(start_index):
+            #     next(csv_dict_reader, None)
+
+            # batch = islice(csv_dict_reader, batch_size)
+
+            # while True:
+            #     chunk = list(islice(batch, chunk_size))
+            #     if not chunk:
+            #         break
+
+            #     process_chunk(chunk, bucket)
+            #     print(
+            #         f"Processed rows {start_index} through {start_index + len(chunk) - 1}",
+            #         flush=True,
+            #     )
+            #     start_index += chunk_size
 
 
 def generate_json_from_csv(row):
