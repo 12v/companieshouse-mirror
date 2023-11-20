@@ -1,6 +1,5 @@
-local/
+artifacts/
 temp/
-output/
 .env
 
 # Byte-compiled / optimized / DLL files
