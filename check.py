@@ -37,7 +37,7 @@ def is_batch_processed(b2_api, key, type):
     bucket_info = bucket.bucket_info
     print("Bucket info: " + str(bucket_info), flush=True)
 
-    return key in bucket_info and bucket_info[key] != "true"
+    return key in bucket_info and bucket_info[key] == "true"
 
 
 def find_latest_directory(product):
