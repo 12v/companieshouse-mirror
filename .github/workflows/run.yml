@@ -26,7 +26,7 @@ jobs:
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Run script
-      run: python check.py --product=https://download.companieshouse.gov.uk/BasicCompanyDataAsOneFile-2023-11-01.zip
+      run: python check.py --product=prod217
       id: check
     outputs:
       key: ${{ steps.check.outputs.key }}
