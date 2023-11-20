@@ -1,5 +1,9 @@
 name: Companies
 
+env:
+  TYPE: "companies"
+
+
 concurrency: 
   group: companies
   cancel-in-progress: false
@@ -26,7 +30,7 @@ jobs:
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Run script
-      run: python check.py --product=prod217
+      run: python check.py --product=prod217 --type=$TYPE
       id: check
     outputs:
       key: ${{ steps.check.outputs.key }}
@@ -91,7 +95,7 @@ jobs:
         OFFSET: ${{ matrix.offset }}
         BATCH_SIZE: ${{ needs.plan.outputs.batch_size }}
         KEY: ${{ needs.check.outputs.key }}
-      run: python process.py --key=$KEY --offset=$OFFSET --batch_size=$BATCH_SIZE
+      run: python process.py --key=$KEY --offset=$OFFSET --batch_size=$BATCH_SIZE --type=$TYPE
   
   conclude:
     needs: [check, plan, process]
@@ -109,4 +113,4 @@ jobs:
     - name: Run script
       env:
         KEY: ${{ needs.check.outputs.key }}
-      run: python conclude.py --key=$KEY
+      run: python conclude.py --key=$KEY --type=$TYPE

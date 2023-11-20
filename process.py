@@ -7,12 +7,12 @@ import argparse
 from dotenv import load_dotenv
 from itertools import islice
 
-from utils import get_companies_bucket, initialise_b2_api
+from utils import get_bucket, initialise_b2_api
 
 artifacts_dir = "artifacts"
 
 
-def main(key, offset, batch_size):
+def main(key, offset, batch_size, type):
     load_dotenv()
 
     b2_api = initialise_b2_api()
@@ -39,7 +39,7 @@ def main(key, offset, batch_size):
 
     file_path = os.path.join(key_dir, file_name)
 
-    bucket = get_companies_bucket(b2_api)
+    bucket = get_bucket(b2_api, type)
 
     chunk_size = 1000
 
@@ -137,5 +137,6 @@ if __name__ == "__main__":
     parser.add_argument("--key", required=True)
     parser.add_argument("--offset", required=True)
     parser.add_argument("--batch_size", required=True)
+    parser.add_argument("--type", required=True)
     args = parser.parse_args()
-    main(args.key, args.offset, int(args.batch_size))
+    main(args.key, args.offset, int(args.batch_size), args.type)

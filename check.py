@@ -4,10 +4,10 @@ import stat
 from dotenv import load_dotenv
 import argparse
 
-from utils import initialise_b2_api, get_companies_bucket, set_output, is_url
+from utils import initialise_b2_api, get_bucket, set_output, is_url
 
 
-def main(product):
+def main(product, type):
     load_dotenv()
 
     b2_api = initialise_b2_api()
@@ -21,7 +21,7 @@ def main(product):
 
     key = product.lower().replace("/", "-").replace(":", "-")
 
-    if is_batch_processed(b2_api, key):
+    if is_batch_processed(b2_api, key, type):
         print("Batch " + key + " is processed, exiting", flush=True)
         exit()
     else:
@@ -31,8 +31,8 @@ def main(product):
     set_output("path", product)
 
 
-def is_batch_processed(b2_api, key):
-    bucket = get_companies_bucket(b2_api)
+def is_batch_processed(b2_api, key, type):
+    bucket = get_bucket(b2_api, type)
 
     bucket_info = bucket.bucket_info
     print("Bucket info: " + str(bucket_info), flush=True)
@@ -78,6 +78,7 @@ def get_latest_child_dir(sftp, path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--product", required=True)
+    parser.add_argument("--type", required=True)
     args = parser.parse_args()
 
-    main(args.product)
+    main(args.product, args.type)

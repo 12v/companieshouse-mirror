@@ -13,18 +13,26 @@ def initialise_b2_api():
     return b2_api
 
 
-def get_companies_bucket(b2_api):
-    bucket_name = "sugartrail-companies"
+def get_bucket(b2_api, type):
+    def get_bucket_by_name(b2_api, bucket_name):
+        try:
+            bucket = b2_api.get_bucket_by_name(bucket_name)
+            print("Bucket with name " + bucket_name + " found", flush=True)
+        except exception.NonExistentBucket:
+            print("Bucket with name " + bucket_name + " not found", flush=True)
+            bucket = b2_api.create_bucket(bucket_name, "allPrivate")
+            print("Bucket with name " + bucket_name + " created", flush=True)
 
-    try:
-        bucket = b2_api.get_bucket_by_name(bucket_name)
-        print("Bucket with name " + bucket_name + " found", flush=True)
-    except exception.NonExistentBucket:
-        print("Bucket with name " + bucket_name + " not found", flush=True)
-        bucket = b2_api.create_bucket(bucket_name, "allPrivate")
-        print("Bucket with name " + bucket_name + " created", flush=True)
+        return bucket
 
-    return bucket
+    if type == "companies":
+        bucket_name = "sugartrail-companies"
+    elif type == "officers":
+        bucket_name = "sugartrail-officers"
+    else:
+        raise ValueError("Unknown type: " + type)
+
+    return get_bucket_by_name(b2_api, bucket_name)
 
 
 def set_output(name, value):
