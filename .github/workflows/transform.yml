@@ -29,14 +29,14 @@ jobs:
       id: download-officer-artifacts
       uses: dawidd6/action-download-artifact@v2
       with:
-        workflow: extract-officers.yml
+        workflow: download-officers.yml
         branch: main
         path: officer-artifacts
     - name: Download artifacts
       id: download-companies-artifacts
       uses: dawidd6/action-download-artifact@v2
       with:
-        workflow: extract-companies.yml
+        workflow: download-companies.yml
         branch: main
         path: company-artifacts
     - name: Run script
