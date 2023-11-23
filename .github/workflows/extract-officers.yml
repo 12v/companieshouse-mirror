@@ -1,0 +1,120 @@
+name: Extract officers
+
+env:
+  TYPE: "officers"
+
+concurrency: 
+  group: officers
+  cancel-in-progress: false
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/workflows/python-setup
+      with:
+        CH_URL: ${{ secrets.CH_URL }}
+        CH_USER: ${{ secrets.CH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+    - name: Run script
+      run: python check.py --product=prod195 --type=$TYPE
+      id: check
+    outputs:
+      key: ${{ steps.check.outputs.key }}
+      path: ${{ steps.check.outputs.path }}
+
+  plan:
+    needs: check
+    if: needs.check.outputs.key
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/workflows/python-setup
+      with:
+        CH_URL: ${{ secrets.CH_URL }}
+        CH_USER: ${{ secrets.CH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+    - name: Cache artifacts
+      uses: actions/cache@v3
+      with:
+        path: artifacts
+        key: ${{ needs.check.outputs.key }}
+    - name: Run script
+      run: python plan.py --key=$KEY --path=$DIR_PATH
+      id: plan
+      env:
+        KEY: ${{ needs.check.outputs.key }}
+        DIR_PATH: ${{ needs.check.outputs.path }}
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ needs.check.outputs.key }}
+        path: artifacts
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      batch_size: ${{ steps.plan.outputs.batch_size }}
+
+  # process:
+  #   needs: [check, plan]
+  #   if: needs.check.outputs.key
+  #   # strategy:
+  #   #   matrix:
+  #   #     offset: ${{ fromJson(needs.plan.outputs.matrix) }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - uses: ./.github/workflows/python-setup
+  #     with:
+  #       CH_URL: ${{ secrets.CH_URL }}
+  #       CH_USER: ${{ secrets.CH_USER }}
+  #       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  #       B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+  #       B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+  #   - name: Download artifact
+  #     uses: actions/download-artifact@v3
+  #     with:
+  #       name: ${{ needs.check.outputs.key }}
+  #       path: artifacts
+  #   - name: Run script
+  #     env:
+  #       OFFSET: 1#${{ matrix.offset }}
+  #       BATCH_SIZE: ${{ needs.plan.outputs.batch_size }}
+  #       KEY: ${{ needs.check.outputs.key }}
+  #     run: python process.py --key=$KEY --offset=$OFFSET --batch_size=$BATCH_SIZE --type=$TYPE
+  #   - name: Upload artifact
+  #     uses: actions/upload-artifact@v3
+  #     with:
+  #       name: ${{ needs.check.outputs.key }}
+  #       path: artifacts/${{ needs.check.outputs.key }}_json
+  
+  # conclude:
+  #   needs: [check, plan, process]
+  #   if: needs.check.outputs.key
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - uses: ./.github/workflows/python-setup
+  #     with:
+  #       CH_URL: ${{ secrets.CH_URL }}
+  #       CH_USER: ${{ secrets.CH_USER }}
+  #       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  #       B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+  #       B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+  #   - name: Run script
+  #     env:
+  #       KEY: ${{ needs.check.outputs.key }}
+  #     run: python conclude.py --key=$KEY --type=$TYPE

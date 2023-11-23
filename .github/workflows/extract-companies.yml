@@ -1,4 +1,4 @@
-name: Download companies
+name: Extract companies
 
 env:
   TYPE: "companies"

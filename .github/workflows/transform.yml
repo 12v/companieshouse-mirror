@@ -1,10 +1,7 @@
-name: Download officers
-
-env:
-  TYPE: "officers"
+name: Transform
 
 concurrency: 
-  group: officers
+  group: transform
   cancel-in-progress: false
 
 on:
@@ -14,7 +11,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 1 * * *'
 
 jobs:
   check:
@@ -28,45 +25,76 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+    - name: Download artifacts
+      id: download-officer-artifacts
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: extract-officers.yml
+        branch: main
+        path: officer-artifacts
+    - name: Download artifacts
+      id: download-companies-artifacts
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: extract-companies.yml
+        branch: main
+        path: company-artifacts
     - name: Run script
-      run: python check.py --product=prod195 --type=$TYPE
+      run: python check.py --product=prod217 --type=$TYPE
       id: check
     outputs:
       key: ${{ steps.check.outputs.key }}
       path: ${{ steps.check.outputs.path }}
+  # check:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - uses: ./.github/workflows/python-setup
+  #     with:
+  #       CH_URL: ${{ secrets.CH_URL }}
+  #       CH_USER: ${{ secrets.CH_USER }}
+  #       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  #       B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+  #       B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+  #   - name: Run script
+  #     run: python check.py --product=prod217 --type=$TYPE
+  #     id: check
+  #   outputs:
+  #     key: ${{ steps.check.outputs.key }}
+  #     path: ${{ steps.check.outputs.path }}
 
-  plan:
-    needs: check
-    if: needs.check.outputs.key
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/workflows/python-setup
-      with:
-        CH_URL: ${{ secrets.CH_URL }}
-        CH_USER: ${{ secrets.CH_USER }}
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
-        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
-    - name: Cache artifacts
-      uses: actions/cache@v3
-      with:
-        path: artifacts
-        key: ${{ needs.check.outputs.key }}
-    - name: Run script
-      run: python plan.py --key=$KEY --path=$DIR_PATH
-      id: plan
-      env:
-        KEY: ${{ needs.check.outputs.key }}
-        DIR_PATH: ${{ needs.check.outputs.path }}
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ needs.check.outputs.key }}
-        path: artifacts
-    outputs:
-      matrix: ${{ steps.plan.outputs.matrix }}
-      batch_size: ${{ steps.plan.outputs.batch_size }}
+  # plan:
+  #   needs: check
+  #   if: needs.check.outputs.key
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - uses: ./.github/workflows/python-setup
+  #     with:
+  #       CH_URL: ${{ secrets.CH_URL }}
+  #       CH_USER: ${{ secrets.CH_USER }}
+  #       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  #       B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+  #       B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+  #   - name: Cache artifacts
+  #     uses: actions/cache@v3
+  #     with:
+  #       path: artifacts
+  #       key: ${{ needs.check.outputs.key }}
+  #   - name: Run script
+  #     run: python plan.py --key=$KEY --path=$DIR_PATH
+  #     id: plan
+  #     env:
+  #       KEY: ${{ needs.check.outputs.key }}
+  #       DIR_PATH: ${{ needs.check.outputs.path }}
+  #   - name: Upload artifact
+  #     uses: actions/upload-artifact@v3
+  #     with:
+  #       name: ${{ needs.check.outputs.key }}
+  #       path: artifacts
+  #   outputs:
+  #     matrix: ${{ steps.plan.outputs.matrix }}
+  #     batch_size: ${{ steps.plan.outputs.batch_size }}
 
   # process:
   #   needs: [check, plan]
