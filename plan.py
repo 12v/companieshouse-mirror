@@ -100,11 +100,11 @@ def download_from_sftp(directory, path):
                     full_sftp_path,
                     localpath=full_temp_path,
                     callback=lambda x, y: print(
-                        "Downloading: " + str(x) + " of " + str(y)
-                        if x % 1000 == 0
-                        else None,
+                        "Downloading: " + str(x) + " of " + str(y),
                         end="\r",
-                    ),
+                    )
+                    if x % 1000 == 0
+                    else None,
                 )
                 print(
                     "Downloaded " + full_sftp_path + " to " + full_temp_path, flush=True
