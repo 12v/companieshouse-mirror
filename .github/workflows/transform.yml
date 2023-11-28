@@ -34,6 +34,11 @@ jobs:
         path: artifacts
     - name: Process companies
       run: python process.py --key=free-prod217-2023-11-02 --type=companies
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: free-prod217-2023-11-02_json
+        path: artifacts/free-prod217-2023-11-02_json
 
 
   process-officers:
@@ -56,6 +61,11 @@ jobs:
         path: artifacts
     - name: Process officers
       run: python process.py --key=free-prod195-2023-01-03 --type=officers
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: free-prod195-2023-01-03_json
+        path: artifacts/free-prod195-2023-01-03_json
     # outputs:
     #   key: ${{ steps.check.outputs.key }}
     #   path: ${{ steps.check.outputs.path }}
