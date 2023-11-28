@@ -63,7 +63,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ needs.check.outputs.key }}
-        path: artifacts
+        path: artifacts/${{ needs.check.outputs.key }}
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       batch_size: ${{ steps.plan.outputs.batch_size }}
