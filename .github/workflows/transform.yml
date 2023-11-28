@@ -25,14 +25,14 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
-    - name: Download artifacts
+    - name: Download officers
       id: download-officer-artifacts
-      uses: dawidd6/action-download-artifact@v2
+      uses: 12v/action-download-artifact@master
       with:
         workflow: download-officers.yml
         branch: main
         path: officer-artifacts
-    - name: Download artifacts
+    - name: Download companies
       id: download-companies-artifacts
       uses: 12v/action-download-artifact@master
       with:
