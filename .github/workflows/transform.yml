@@ -31,20 +31,20 @@ jobs:
       with:
         workflow: download-officers.yml
         branch: main
-        path: officer-artifacts
+        path: artifacts
     - name: Download companies
       id: download-companies-artifacts
       uses: 12v/action-download-artifact@master
       with:
         workflow: download-companies.yml
         branch: main
-        path: company-artifacts
-    - name: Run script
-      run: python check.py --product=prod217 --type=$TYPE
-      id: check
-    outputs:
-      key: ${{ steps.check.outputs.key }}
-      path: ${{ steps.check.outputs.path }}
+        path: artifacts
+    - name: Process companies
+      run: python process.py --key=free-prod217-2023-11-02 --type=companies
+      id: process
+    # outputs:
+    #   key: ${{ steps.check.outputs.key }}
+    #   path: ${{ steps.check.outputs.path }}
   # check:
   #   runs-on: ubuntu-latest
   #   steps:
