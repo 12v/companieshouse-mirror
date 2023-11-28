@@ -14,7 +14,7 @@ on:
     - cron: '0 1 * * *'
 
 jobs:
-  check:
+  process-companies:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -34,8 +34,19 @@ jobs:
         path: artifacts
     - name: Process companies
       run: python process.py --key=free-prod217-2023-11-02 --type=companies
-    - name: Clear artifacts
-      run: rm -rf artifacts/free-prod217-2023-11-02
+
+
+  process-officers:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/workflows/python-setup
+      with:
+        CH_URL: ${{ secrets.CH_URL }}
+        CH_USER: ${{ secrets.CH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
     - name: Download officers
       id: download-officer-artifacts
       uses: 12v/action-download-artifact@master
