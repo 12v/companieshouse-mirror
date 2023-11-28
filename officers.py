@@ -12,7 +12,7 @@ def officers_generator(file):
 
             if is_trailer_entry(line):
                 print(line)
-                raise StopIteration
+                return
             elif is_company_entry(line):
                 company = generate_company_from_entry(line)
                 officers = []
