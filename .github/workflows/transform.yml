@@ -34,7 +34,7 @@ jobs:
         path: officer-artifacts
     - name: Download artifacts
       id: download-companies-artifacts
-      uses: dawidd6/action-download-artifact@v2
+      uses: 12v/action-download-artifact@v2
       with:
         workflow: download-companies.yml
         branch: main
